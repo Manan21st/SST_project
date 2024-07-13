@@ -2,6 +2,7 @@ const express = require("express");
 const bcrypt = require("bcrypt");
 const User = require("../models/userModel");
 const jwt = require("jsonwebtoken");
+const authMiddleware = require("../middlewares/authMiddleware");
 
 const router = express.Router();
 
@@ -31,30 +32,51 @@ router.post("/register", async (req, res) => {
 });
 
 router.post("/login", async (req, res) => {
-    const user = await User.findOne({email:req.body.email});
-    if(!user){
+    try{
+        const user = await User.findOne({email:req.body.email});
+        if(!user){
+            res.send({
+                success:false,
+                message : "User does not exist, please register"
+            })
+        }
+
+        const validPassword = await bcrypt.compare(req.body.password, user.password);
+        if(!validPassword){
+            res.send({
+                success:false,
+                message : "Invalid password"
+            })
+        }
+
+        const token = jwt.sign({userId : user.id}, process.env.JWT_SECRET, {expiresIn:"1d"}); 
+
         res.send({
-            success:false,
-            message : "User does not exist, please register"
+            success:true,
+            message : "User has been logged in successfully",
+            token:token
         })
+    } catch(err){
+        console.log(err);
     }
 
-    const validPassword = await bcrypt.compare(req.body.password, user.password);
-    if(!validPassword){
-        res.send({
-            success:false,
-            message : "Invalid password"
-        })
-    }
-
-    const token = jwt.sign({userId : user.id}, process.env.JWT_SECRET, {expiresIn:"1d"}); 
-
-    res.send({
-        success:true,
-        message : "User has been logged in successfully",
-        token:token
-    })
 });
 
+router.get("/get-current-user", authMiddleware, async (req, res) => {
+    try{
+        const user = await User.findById(req.body.userId).select('-password');
+        res.send({
+            success:true,
+            message:"You are authorized",
+            data:user
+        })
+    }
+    catch(err){
+        res.send({
+            success:false,
+            message:"You are not authorized"
+        })
+    }
+});
 
 module.exports = router;

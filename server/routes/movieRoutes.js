@@ -5,9 +5,9 @@ const Movie = require('../models/movieModel')
 
 router.post('/add-movie' , async (req , res)=>{
     try {
-         const newMovie = new Movie(req.body)
-         await newMovie.save()
-         res.send({
+        const newMovie = new Movie(req.body)
+        await newMovie.save()
+        res.send({
             success: true,
             message: 'New movie has been added!'
         })
@@ -23,7 +23,7 @@ router.post('/add-movie' , async (req , res)=>{
 // Get all the movies
 
 router.get('/get-all-movies' , async(req , res)=>{
-  try {
+    try {
         const allMovies = await Movie.find()
         res.send({
             success: true,
